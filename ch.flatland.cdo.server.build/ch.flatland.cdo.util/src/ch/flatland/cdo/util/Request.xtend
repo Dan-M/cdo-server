@@ -11,15 +11,62 @@
 package ch.flatland.cdo.util
 
 import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletResponse
 import org.apache.commons.codec.binary.Base64
 
 import static ch.flatland.cdo.util.Constants.*
+import static javax.servlet.http.HttpServletResponse.*
 
 class Request {
 
 	val public static AUTH_HEADER = "Authorization"
+	val public static AUTH_BASIC = "Basic"
 	val public static ACCEPT_HEADER = "Accept"
+
+	def getParameterNameAsListValueNotNull(HttpServletRequest req) {
+		val params = newArrayList
+		val enum = req.parameterNames
+		while(enum.hasMoreElements) {
+			val paramName = enum.nextElement
+			if(req.getParameter(paramName) != null && req.getParameter(paramName).length > 0) {
+				params.add(paramName)
+			}
+		}
+		return params
+	}
+
+	def getJsonCallback(HttpServletRequest req) {
+		if(req.getParameter(PARAM_JSONP_CALLBACK) != null && req.getParameter(PARAM_JSONP_CALLBACK).length > 0) {
+			return req.getParameter(PARAM_JSONP_CALLBACK)
+		}
+		return null
+	}
+	
+	def getOrderBy(HttpServletRequest req) {
+		if(req.getParameter(PARAM_ORDER_BY) != null && req.getParameter(PARAM_ORDER_BY).length > 0) {
+			return req.getParameter(PARAM_ORDER_BY)
+		}
+		return null
+	}
+	
+	def isValidate(HttpServletRequest req) {
+		return req.getParameter(PARAM_VALIDATE) != null
+	}
+
+	def isXor(HttpServletRequest req) {
+		return req.getParameter(PARAM_XOR_FILTER) != null
+	}
+
+	def isNoRefs(HttpServletRequest req) {
+		return req.getParameter(PARAM_NO_REFS) != null
+	}
+
+	def isMetaDataRequested(HttpServletRequest req) {
+		return req.getParameter(PARAM_META) != null
+	}
+
+	def isForceRequested(HttpServletRequest req) {
+		return req.getParameter(PARAM_FORCE) != null
+	}
 
 	def getUserId(HttpServletRequest request) {
 		val userNameIndex = request.safeUserNameAndPassword.indexOf(":")
@@ -42,9 +89,9 @@ class Request {
 	}
 
 	def isBasicAuth(HttpServletRequest request) {
-		return request.getHeader(AUTH_HEADER) != null
+		return request.getHeader(AUTH_HEADER) != null && request.getHeader(AUTH_HEADER).toLowerCase.startsWith(AUTH_BASIC.toLowerCase)
 	}
-	
+
 	def isAcceptable(HttpServletRequest request) {
 		val acceptHeader = request.getHeader(ACCEPT_HEADER)
 		return ACCEPTED_CONTENTTYPES.contains(acceptHeader)
@@ -55,26 +102,24 @@ class Request {
 	}
 
 	// methods which could throw an Exception
-
 	def String safeReadBody(HttpServletRequest request) {
 		val buffer = new StringBuffer();
 		var String line = null;
 
 		val reader = request.getReader();
-		while ((line = reader.readLine) != null) {
+		while((line = reader.readLine) != null) {
 			buffer.append(line)
 		}
-		if (buffer.length == 0) {
-			throw new FlatlandException("Request body must not be empty", HttpServletResponse.SC_BAD_REQUEST)
+		if(buffer.length == 0) {
+			throw new FlatlandException(SC_BAD_REQUEST, "Request body must not be empty")
 		}
 		return buffer.toString
 	}
 
 	def private safeUserNameAndPassword(HttpServletRequest request) {
 		val authHeader = request.getHeader(AUTH_HEADER)
-		if (authHeader == null) {
-			throw new FlatlandException("Request basic authentication must not be empty",
-				HttpServletResponse.SC_BAD_REQUEST)
+		if(authHeader == null) {
+			throw new FlatlandException(SC_BAD_REQUEST, "Request basic authentication must not be empty")
 		}
 		val usernameAndPassword = new String(Base64.decodeBase64(authHeader.substring(6).getBytes()))
 		return usernameAndPassword

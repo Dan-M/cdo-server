@@ -15,40 +15,43 @@ import javax.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
 
 import static ch.flatland.cdo.util.Constants.*
+import static javax.servlet.http.HttpServletResponse.*
 
 class Response {
 	val logger = LoggerFactory.getLogger(this.class)
-	
+
+	val extension Request = new Request
+
 	def writeResponse(HttpServletResponse resp, HttpServletRequest req, String jsonString) {
 		logger.debug("Json '{}'", jsonString)
 
 		// write response
-		if (req.getParameter(PARAM_JSONP_CALLBACK) != null && req.getParameter(PARAM_JSONP_CALLBACK).length > 0) {
+		if(req.jsonCallback != null) {
 			resp.contentType = JSONP_CONTENTTYPE_UTF8
-			resp.writer.append('''«req.getParameter(PARAM_JSONP_CALLBACK)»(«jsonString»)''')
+			resp.writer.append('''«req.jsonCallback»(«jsonString»)''')
 		} else {
 			resp.contentType = JSON_CONTENTTYPE_UTF8
 			resp.writer.append(jsonString)
 		}
 	}
-	
+
 	def statusForbidden(HttpServletResponse resp) {
-		resp.status = HttpServletResponse.SC_FORBIDDEN
-		return new FlatlandException("Forbidden", resp.status)
+		resp.status = SC_FORBIDDEN
+		return new FlatlandException(resp.status, "Forbidden")
 	}
-	
+
 	def statusUnauthorized(HttpServletResponse resp) {
-		resp.status = HttpServletResponse.SC_UNAUTHORIZED
-		return new FlatlandException("Unauthorized", resp.status)
+		resp.status = SC_UNAUTHORIZED
+		return new FlatlandException(resp.status, "Unauthorized")
 	}
-	
+
 	def statusMethodNotAllowed(HttpServletResponse resp) {
-		resp.status = HttpServletResponse.SC_METHOD_NOT_ALLOWED
-		return new FlatlandException("Method not allowed", resp.status)
+		resp.status = SC_METHOD_NOT_ALLOWED
+		return new FlatlandException(resp.status, "Method not allowed")
 	}
-	
+
 	def statusNotAcceptable(HttpServletResponse resp) {
-		resp.status = HttpServletResponse.SC_NOT_ACCEPTABLE
-		return new FlatlandException("Not acceptable", resp.status)
+		resp.status = SC_NOT_ACCEPTABLE
+		return new FlatlandException(resp.status, "Not acceptable")
 	}
 }

@@ -31,22 +31,21 @@ class Get {
 
 		val view = SessionFactory.getCDOSession(req).openView
 
-		var Object requestedObject = null
 		var String jsonString = null
 
 		val extension JsonConverter = req.createJsonConverter
 
 		try {
-			requestedObject = view.safeRequestResource(req)
+			val requestedObject = view.safeRequestResource(req, resp)
 
 			jsonString = requestedObject.safeToJson
 
-		} catch (FlatlandException e) {
+		} catch(FlatlandException e) {
 			resp.status = e.httpStatus
 			jsonString = e.safeToJson
 			logger.error("Request failed", e)
 		} finally {
-			if (!view.closed) {
+			if(!view.closed) {
 				view.close
 			}
 		}
